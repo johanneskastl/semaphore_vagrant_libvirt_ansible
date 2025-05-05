@@ -1,0 +1,52 @@
+---
+- name: 'Configure and start semaphore'
+  hosts: 'all'
+  gather_facts: true
+  become: true
+
+  tasks:
+
+    - name: Create /etc/semaphore/config.json
+      ansible.builtin.copy:
+        src: config.json
+        dest: /etc/semaphore/config.json
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Create the admin user
+      ansible.builtin.command:
+        cmd: |
+          /usr/bin/semaphore user add \
+            --admin \
+            --login admin \
+            --password totallysecurepassword \
+            --name "Admin" \
+            --email "admin@localhost" \
+            --config /etc/semaphore/config.json
+        chdir: '/etc/semaphore/'
+        creates: '/etc/semaphore/database.boltdb'
+
+    - name: Start and enable the service
+      ansible.builtin.service:
+        name: semaphore
+        state: started
+        enabled: true
+
+    - name: 'Wait for URL to be available'
+      delegate_to: 'localhost'
+      become: false
+      ansible.builtin.uri:
+        url: "http://{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}:3000"
+      register: result
+      until: "result.status == 200"
+      retries: 31
+      delay: 10
+
+    - name: 'Semaphore URL'
+      ansible.builtin.debug:
+        msg: "Semaphore URL: http://{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}:3000"
+
+    - name: 'Semaphore credentials'
+      ansible.builtin.debug:
+        msg: "Use the username 'admin' and the password 'totallysecurepassword'"
