@@ -32,3 +32,6 @@
 
 - name: 'Run playbook-all_nodes-install_semaphore.yml'
   ansible.builtin.import_playbook: playbook-all_nodes-install_semaphore.yml
+
+- name: 'Run playbook-all_nodes-configure_and_start_semaphore.yml'
+  ansible.builtin.import_playbook: playbook-all_nodes-configure_and_start_semaphore.yml
